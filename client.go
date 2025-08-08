@@ -1,154 +1,95 @@
 package securehttp
 
 import (
-	"bytes"
-	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
-
-	"github.com/goccy/go-json"
 )
 
 type IClient interface {
-	Get() *http.Client
-	MultipartWithNethttp(opts MultipartRequestOptions) error
-	DoWithNethttp(opts RequestOptions) error
+	GetClient() *http.Client
 }
 
 type clientConfig struct {
-	clientNetHttp *http.Client
+	netHttpClient *http.Client
 }
 
-func (c *clientConfig) Get() *http.Client {
-	return c.clientNetHttp
-}
-
-// newTransport configures a custom HTTP transport for connection pooling and timeouts.
-func newTransport() *http.Transport {
-	return &http.Transport{
-		MaxIdleConns:          100,
-		MaxIdleConnsPerHost:   20,
-		IdleConnTimeout:       90 * time.Second,
+func Setup(timeout time.Duration, customTransport *http.Transport) *clientConfig {
+	// TODO: implement dnscache for better performance later
+	// r := &dnscache.Resolver{}
+	transporter := &http.Transport{
+		// TODO: custom dial context combined with dnscache
+		// DialContext: func(ctx context.Context, network string, addr string) (conn net.Conn, err error) {
+		// 	separator := strings.LastIndex(addr, ":")
+		// 	ips, err := r.LookupHost(ctx, addr[:separator])
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	for _, ip := range ips {
+		// 		conn, err = net.Dial(network, ip+addr[separator:])
+		// 		if err == nil {
+		// 			break
+		// 		}
+		// 	}
+		// 	return
+		// },
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConns:          1024,
+		MaxConnsPerHost:       100,
+		IdleConnTimeout:       10 * time.Second,
 	}
-}
+	// TODO: dnscache background check and update
+	// go func() {
+	// 	clearUnused := true
+	// 	t := time.NewTicker(5 * time.Minute)
+	// 	defer t.Stop()
+	// 	for range t.C {
+	// 		r.Refresh(clearUnused)
+	// 	}
+	// }()
 
-func NewClient() *clientConfig {
+	if customTransport == nil {
+		transporter = customTransport
+	}
+
 	return &clientConfig{
-		clientNetHttp: &http.Client{
-			Transport: newTransport(),
-			Timeout:   30 * time.Second,
+		netHttpClient: &http.Client{
+			Transport: transporter,
+			Timeout:   timeout,
 		},
 	}
 }
 
-func (c *clientConfig) MultipartWithNethttp(opts MultipartRequestOptions) error {
-	// determine timeout
-	timeout := opts.Timeout
-	if timeout <= 0 {
-		timeout = 10 * time.Second
-	}
-	// create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	// prepare the request body reader
-	var bodyReader io.Reader
-	if opts.Multipart != nil && opts.Body.Bytes() != nil {
-		bodyReader = bytes.NewReader(opts.Body.Bytes())
-	}
-
-	// build the HTTP request
-	req, err := http.NewRequestWithContext(ctx, opts.Method, opts.URL, bodyReader)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// set multipart content type if needed
-	if opts.Multipart != nil {
-		req.Header.Set("Content-Type", opts.Multipart.FormDataContentType())
-	}
-
-	// set any additional headers
-	for k, v := range opts.Headers {
-		req.Header.Set(k, v)
-	}
-
-	// perform the request
-	resp, err := c.clientNetHttp.Do(req)
-	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// check expected status code
-	if resp.StatusCode != opts.ExpectCode {
-		// read up to 1KB of body to include in the error
-		buf := make([]byte, 1024)
-		n, _ := resp.Body.Read(buf)
-		return fmt.Errorf("unexpected status code: got %d, want %d; body: %q",
-			resp.StatusCode, opts.ExpectCode, string(buf[:n]))
-	}
-
-	// decode JSON output if requested
-	if opts.Out != nil {
-		if err := json.NewDecoder(resp.Body).Decode(opts.Out); err != nil {
-			return fmt.Errorf("unmarshal failed: %w", err)
+func (c *clientConfig) buildReq(method, url string, body io.Reader, headers http.Header) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err == nil {
+		for header, vals := range headers {
+			for _, val := range vals {
+				req.Header.Add(header, val)
+			}
 		}
 	}
 
-	return nil
+	return req, err
 }
 
-func (c *clientConfig) DoWithNethttp(opts RequestOptions) error {
-	timeout := opts.Timeout
-	if timeout <= 0 {
-		timeout = 10 * time.Second
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	var reqBody []byte
-	if opts.Body != nil {
-		jsonBody, err := json.Marshal(opts.Body)
-		if err != nil {
-			return fmt.Errorf("marshal body failed: %w", err)
-		}
-
-		reqBody = jsonBody
-	}
-
-	req, err := http.NewRequestWithContext(ctx, opts.Method, opts.URL, bytes.NewReader(reqBody))
+func (c *clientConfig) Do(url string, method string, timeout time.Duration, headers http.Header, body io.Reader) (*http.Response, error) {
+	req, err := c.buildReq(method, url, body, headers)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, err
 	}
 
-	for k, v := range opts.Headers {
-		req.Header.Set(k, v)
-	}
+	return c.netHttpClient.Do(req)
+}
 
-	resp, err := c.clientNetHttp.Do(req)
-	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != opts.ExpectCode {
-		buf := make([]byte, 1024)
-		n, _ := resp.Body.Read(buf)
-		return fmt.Errorf("unexpected status code: got %d, want %d; body: %q",
-			resp.StatusCode, opts.ExpectCode, string(buf[:n]))
-	}
-
-	if opts.Out != nil {
-		if err := json.NewDecoder(resp.Body).Decode(opts.Out); err != nil {
-			return fmt.Errorf("unmarshal failed: %w", err)
+func (c *clientConfig) DoForget(url string, method string, timeout time.Duration, headers http.Header, body io.Reader) {
+	go func() {
+		resp, _ := c.Do(url, method, timeout, headers, body)
+		if resp != nil {
+			// Consume the entire body so we can reuse this connection
+			defer resp.Body.Close()
+			io.ReadAll(resp.Body)
 		}
-	}
-
-	return nil
+	}()
 }
