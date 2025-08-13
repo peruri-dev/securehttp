@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/peruri-dev/inalog"
 )
@@ -64,6 +65,8 @@ func Init(c Config) *serverConfig {
 	fiberConf := fiber.Config{
 		StrictRouting: true,
 		ServerHeader:  "Peruri-SecureHTTP",
+		JSONEncoder:   json.Marshal,
+		JSONDecoder:   json.Unmarshal,
 	}
 
 	if c.TimeoutRead != 0 {

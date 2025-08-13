@@ -3,6 +3,7 @@ module github.com/peruri-dev/securehttp
 go 1.24.4
 
 require (
+	github.com/goccy/go-json v0.10.5
 	github.com/gofiber/contrib/otelfiber v1.0.10
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/matoous/go-nanoid/v2 v2.1.0
