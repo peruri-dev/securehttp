@@ -163,6 +163,20 @@ func (c *serverConfig) Run(port int) {
 	// Start server in a goroutine
 	go func() {
 		c.setDefaultPath()
+
+		// override default 404 page
+		c.app.Use(func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusNotFound).JSON(Build{
+				Errors: []any{ErrResponse{
+					ID:     c.Locals("requestid").(string),
+					Status: 404,
+					Code:   "HTTP-404",
+					Title:  "not found",
+					Detail: "the page you are looking for is not exist",
+				}},
+			})
+		})
+
 		// ListenAndServe will block until error or shutdown
 		err := c.app.Listen(fmt.Sprintf(":%d", port))
 		if err != nil && err != http.ErrServerClosed {
