@@ -7,7 +7,8 @@ import (
 )
 
 type IClient interface {
-	GetClient() *http.Client
+	Do(url string, method string, timeout time.Duration, headers http.Header, body io.Reader) (*http.Response, error)
+	DoForget(url string, method string, timeout time.Duration, headers http.Header, body io.Reader)
 }
 
 type clientConfig struct {

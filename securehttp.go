@@ -20,13 +20,26 @@ type DefaultPath struct {
 	OASPath string
 }
 
+type RateLimit struct {
+	Enabled  bool
+	Duration time.Duration
+	Size     int
+}
+
+type CorsConfig struct {
+	Enabled bool
+	Methods string
+	Origins string
+}
+
 type Config struct {
 	BodyLimit       int
 	EnablePrefork   bool
 	ReadBufferSize  int
 	WriteBufferSize int
 	EnableProfiling bool
-	EnableRateLimit bool
+	RateLimit       RateLimit
+	CorsConfig      CorsConfig
 	AppVersion      string
 	TimeoutRead     time.Duration
 	TimeoutWrite    time.Duration

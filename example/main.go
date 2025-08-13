@@ -16,10 +16,19 @@ func main() {
 		ReadBufferSize:  10000,
 		WriteBufferSize: 10000,
 		EnableProfiling: true,
-		EnableRateLimit: true,
-		AppVersion:      "local",
-		TimeoutRead:     5 * time.Minute,
-		TimeoutWrite:    5 * time.Minute,
+		RateLimit: securehttp.RateLimit{
+			Enabled:  true,
+			Duration: 1 * time.Second,
+			Size:     100,
+		},
+		CorsConfig: securehttp.CorsConfig{
+			Enabled: true,
+			Methods: "OPTIONS,GET,POST",
+			Origins: "*",
+		},
+		AppVersion:   "local",
+		TimeoutRead:  5 * time.Minute,
+		TimeoutWrite: 5 * time.Minute,
 		DefaultPath: securehttp.DefaultPath{
 			Status:  "/status",
 			Health:  "/healthz",

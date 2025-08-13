@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	rateLimit    = 10
-	rateDuration = 1 * time.Second
+	defaultRateLimit    = 500
+	defaultRateDuration = 1 * time.Second
 )
 
 func (conf *serverConfig) preMiddleware(app *fiber.App) {
@@ -41,16 +41,39 @@ func (conf *serverConfig) preMiddleware(app *fiber.App) {
 	app.Use(helmet.New())
 
 	// CORS—restrict origins in production
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "OPTIONS,GET,POST",
-	}))
+	if conf.config.CorsConfig.Enabled {
+		origins := "*"
+		methods := "OPTIONS,GET,POST"
+
+		if conf.config.CorsConfig.Origins != "" {
+			origins = conf.config.CorsConfig.Origins
+		}
+		if conf.config.CorsConfig.Methods != "" {
+			methods = conf.config.CorsConfig.Methods
+		}
+
+		app.Use(cors.New(cors.Config{
+			AllowOrigins: origins,
+			AllowMethods: methods,
+		}))
+	}
 
 	// rate limiting
-	if conf.config.EnableRateLimit {
+	if conf.config.RateLimit.Enabled {
+		maxRL := defaultRateLimit
+		expRL := defaultRateDuration
+
+		if conf.config.RateLimit.Duration != 0 {
+			expRL = conf.config.RateLimit.Duration
+		}
+
+		if conf.config.RateLimit.Size != 0 {
+			maxRL = conf.config.RateLimit.Size
+		}
+
 		app.Use(limiter.New(limiter.Config{
-			Max:                    rateLimit,
-			Expiration:             rateDuration,
+			Max:                    maxRL,
+			Expiration:             expRL,
 			LimiterMiddleware:      limiter.SlidingWindow{},
 			SkipSuccessfulRequests: true,
 			LimitReached: func(c *fiber.Ctx) error {
