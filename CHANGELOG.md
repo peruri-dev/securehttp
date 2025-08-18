@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.3.1](https://github.com/peruri-dev/securehttp/compare/v1.3.0...v1.3.1) (2025-08-18)
+
+
+### Bug Fixes
+
+* bugs on httpclient while empty transporter init ([17f9915](https://github.com/peruri-dev/securehttp/commit/17f9915e3ad4c06189ce96a39640e16ec2f619b1))
+
 ## [1.3.0](https://github.com/peruri-dev/securehttp/compare/v1.2.0...v1.3.0) (2025-08-13)
 
 
