@@ -50,7 +50,7 @@ func Setup(timeout time.Duration, customTransport *http.Transport) *clientConfig
 	// 	}
 	// }()
 
-	if customTransport == nil {
+	if customTransport != nil {
 		transporter = customTransport
 	}
 
