@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.0](https://github.com/peruri-dev/securehttp/compare/v1.4.0...v1.5.0) (2025-10-19)
+
+
+### Features
+
+* add more extra params on cors ([12c3258](https://github.com/peruri-dev/securehttp/commit/12c32583079c81a003c08ac51d2bb48d97559e3b))
+
 ## [1.4.0](https://github.com/peruri-dev/securehttp/compare/v1.3.1...v1.4.0) (2025-08-19)
 
 
