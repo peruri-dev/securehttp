@@ -31,6 +31,7 @@ type CorsConfig struct {
 	Enabled bool
 	Methods string
 	Origins string
+	Headers string
 }
 
 type Config struct {

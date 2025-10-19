@@ -44,6 +44,7 @@ func (conf *serverConfig) preMiddleware(app *fiber.App) {
 	if conf.config.CorsConfig.Enabled {
 		origins := "*"
 		methods := "OPTIONS,GET,POST"
+		headers := "Content-Type,Authorization,Cookie,X-Real-IP,X-Forwarded-For"
 
 		if conf.config.CorsConfig.Origins != "" {
 			origins = conf.config.CorsConfig.Origins
@@ -51,10 +52,15 @@ func (conf *serverConfig) preMiddleware(app *fiber.App) {
 		if conf.config.CorsConfig.Methods != "" {
 			methods = conf.config.CorsConfig.Methods
 		}
+		if conf.config.CorsConfig.Headers != "" {
+			headers = conf.config.CorsConfig.Headers
+		}
 
 		app.Use(cors.New(cors.Config{
-			AllowOrigins: origins,
-			AllowMethods: methods,
+			AllowOrigins:     origins,
+			AllowMethods:     methods,
+			AllowHeaders:     headers,
+			AllowCredentials: true,
 		}))
 	}
 
