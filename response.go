@@ -6,7 +6,7 @@ import (
 	"github.com/peruri-dev/inalog"
 )
 
-func SuccessResponse(c *fiber.Ctx, data interface{}) error {
+func SuccessResponse(c *fiber.Ctx, data any) error {
 	response := Build{
 		Data:   data,
 		Errors: []any{},
@@ -30,7 +30,6 @@ func ErrorResponse(c *fiber.Ctx, err error) error {
 	response := Build{
 		Errors: []any{resp},
 	}
-
 	if parsed.Status >= 500 {
 		log.Error(
 			parsed.Original.Error(),
