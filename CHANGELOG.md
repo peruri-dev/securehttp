@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.5.1](https://github.com/peruri-dev/securehttp/compare/v1.5.0...v1.5.1) (2025-11-01)
+
+
+### Bug Fixes
+
+* non injected buffer size ([89fa2f5](https://github.com/peruri-dev/securehttp/commit/89fa2f5d1780ea54cbd55434d6039c681d00bb98))
+
 ## [1.5.0](https://github.com/peruri-dev/securehttp/compare/v1.4.0...v1.5.0) (2025-10-19)
 
 
