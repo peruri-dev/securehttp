@@ -86,6 +86,14 @@ func Init(c Config) *serverConfig {
 		fiberConf.Prefork = true
 	}
 
+	if c.WriteBufferSize > 0 {
+		fiberConf.WriteBufferSize = c.WriteBufferSize
+	}
+
+	if c.ReadBufferSize > 0 {
+		fiberConf.ReadBufferSize = c.ReadBufferSize
+	}
+
 	fiberApp := fiber.New(fiberConf)
 	newServer := &serverConfig{
 		app:    fiberApp,
