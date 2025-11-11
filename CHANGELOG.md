@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.6.0](https://github.com/peruri-dev/securehttp/compare/v1.5.1...v1.6.0) (2025-11-11)
+
+
+### Features
+
+* panic middleware print & oas with better UI ([a60705c](https://github.com/peruri-dev/securehttp/commit/a60705cf54e8be80e50884b436314854a405d021))
+
 ## [1.5.1](https://github.com/peruri-dev/securehttp/compare/v1.5.0...v1.5.1) (2025-11-01)
 
 
