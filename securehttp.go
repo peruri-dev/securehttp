@@ -68,6 +68,17 @@ func Init(c Config) *serverConfig {
 		ServerHeader:  "Peruri-SecureHTTP",
 		JSONEncoder:   json.Marshal,
 		JSONDecoder:   json.Unmarshal,
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return c.Status(fiber.StatusInternalServerError).JSON(Build{
+				Errors: []any{ErrResponse{
+					ID:     c.Locals("requestid").(string),
+					Status: 500,
+					Code:   "HTTP-500",
+					Title:  "internal server error",
+					Detail: "unknown server error please contact providers",
+				}},
+			})
+		},
 	}
 
 	if c.TimeoutRead != 0 {
@@ -164,6 +175,24 @@ func (c *serverConfig) SetOAS(jsonFile []byte) {
 	c.app.Get(oasPath, func(c *fiber.Ctx) error {
 		c.Type("json")
 		return c.Send(jsonFile)
+	})
+}
+
+func (c *serverConfig) OpenAPISpec(fileSource string, urlPath string) {
+	if fileSource == "" {
+		fileSource = "./openapi"
+	}
+
+	if urlPath == "" {
+		urlPath = "/docs"
+	}
+
+	c.app.Static("/", fileSource)
+	c.app.Get(urlPath, func(c *fiber.Ctx) error {
+		return c.SendFile("openapi/index.html")
+	})
+	c.app.Get("/spec.yml", func(c *fiber.Ctx) error {
+		return c.SendFile("openapi/spec.yml")
 	})
 }
 

@@ -1,6 +1,9 @@
 package securehttp
 
 import (
+	"fmt"
+	"log/slog"
+	"runtime"
 	"time"
 
 	"github.com/gofiber/contrib/otelfiber"
@@ -20,22 +23,19 @@ const (
 )
 
 func (conf *serverConfig) preMiddleware(app *fiber.App) {
-	app.Use(recover.New())
+	app.Use(InjectRequestID())
 
-	app.Use(func(c *fiber.Ctx) error {
-		start := time.Now()
-
-		c.Locals(inalog.CtxKeyHttp, inalog.FiberCtxHttpBuilder(c))
-		c.Locals(inalog.CtxKeyDevice, inalog.FiberCtxDeviceBuilder(c))
-
-		err := c.Next()
-		inalog.FiberHTTPLog(inalog.FiberHTTPLogParam{
-			FiberCtx:  c,
-			StartTime: start,
-		})
-
-		return err
-	})
+	app.Use(recover.New(recover.Config{
+		EnableStackTrace: true,
+		StackTraceHandler: func(c *fiber.Ctx, e any) {
+			pc, _, line, _ := runtime.Caller(3)
+			inalog.LogWith(inalog.WithCfg{Ctx: c.Context()}).
+				Error("PANIC",
+					slog.Any("panic", e),
+					slog.String("trace", fmt.Sprintf("%s:%d", runtime.FuncForPC(pc).Name(), line)),
+				)
+		},
+	}))
 
 	// secure headers
 	app.Use(helmet.New())
@@ -88,8 +88,6 @@ func (conf *serverConfig) preMiddleware(app *fiber.App) {
 		}))
 	}
 
-	app.Use(InjectRequestID())
-
 	// profiling API
 	if conf.config.EnableProfiling {
 		app.Use(pprof.New())
@@ -97,6 +95,20 @@ func (conf *serverConfig) preMiddleware(app *fiber.App) {
 
 	// otel fiber middleware
 	app.Use(otelfiber.Middleware())
+
+	app.Use(func(c *fiber.Ctx) error {
+		start := time.Now()
+
+		c.Locals(inalog.CtxKeyHttp, inalog.FiberCtxHttpBuilder(c))
+		c.Locals(inalog.CtxKeyDevice, inalog.FiberCtxDeviceBuilder(c))
+
+		inalog.FiberHTTPLog(inalog.FiberHTTPLogParam{
+			FiberCtx:  c,
+			StartTime: start,
+		})
+
+		return c.Next()
+	})
 }
 
 // request ID injection via NanoID
